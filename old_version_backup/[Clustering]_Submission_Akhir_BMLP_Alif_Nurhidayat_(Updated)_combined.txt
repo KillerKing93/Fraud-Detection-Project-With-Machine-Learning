@@ -1,0 +1,699 @@
+# **1. Perkenalan Dataset**
+Tahap pertama, Anda harus mencari dan menggunakan dataset **tanpa label** dengan ketentuan sebagai berikut:
+
+1. **Sumber Dataset**:  
+   Dataset dapat diperoleh dari berbagai sumber, seperti public repositories (*Kaggle*, *UCI ML Repository*, *Open Data*) atau data primer yang Anda kumpulkan sendiri.
+   
+2. **Ketentuan Dataset**:
+   - **Tanpa label**: Dataset tidak boleh memiliki label atau kelas.
+   - **Jumlah
+    Baris**: Minimal 1000 baris untuk memastikan dataset cukup besar untuk analisis yang bermakna.
+   - **Tipe Data**: Harus mengandung data **kategorikal** dan **numerikal**.
+     - *Kategorikal*: Misalnya jenis kelamin, kategori produk.
+     - *Numerikal*: Misalnya usia, pendapatan, harga.
+
+3. **Pembatasan**:  
+   Dataset yang sudah digunakan dalam latihan clustering (seperti customer segmentation) tidak boleh digunakan.
+
+**Penjelasan Dataset**:
+   
+Dataset yang digunakan adalah **"Bank Transaction Dataset for Fraud Detection"** dari Kaggle. Dataset ini berisi 2.512 sampel data transaksi yang mencerminkan pola perilaku keuangan dan aktivitas transaksi. Karena tidak memiliki label awal, dataset ini cocok untuk eksplorasi *unsupervised learning* seperti deteksi anomali dan pengelompokan transaksi berdasarkan pola tertentu.
+
+Berikut adalah deskripsi kolom dalam dataset:
+
+1. **TransactionID**: ID unik untuk setiap transaksi.
+2. **AccountID**: ID unik untuk setiap akun, yang memiliki beberapa transaksi.
+3. **TransactionAmount**: Nilai moneter transaksi, mulai dari pengeluaran kecil hingga pembelian besar (numerikal).
+4. **TransactionDate**: Waktu dan tanggal terjadinya transaksi.
+5. **TransactionType**: Jenis transaksi, dapat berupa "Credit" atau "Debit" (kategorikal).
+6. **Location**: Lokasi geografis transaksi berdasarkan nama kota di AS (kategorikal).
+7. **DeviceID**: ID perangkat yang digunakan untuk transaksi.
+8. **IPAddress**: Alamat IPv4 terkait transaksi, yang dapat berubah untuk beberapa akun.
+9. **MerchantID**: ID unik pedagang, membantu dalam analisis pedagang yang sering digunakan atau mencurigakan.
+10. **AccountBalance**: Saldo akun setelah transaksi dilakukan, dengan korelasi logis berdasarkan jenis dan jumlah transaksi (numerikal).
+11. **PreviousTransactionDate**: Waktu transaksi terakhir dari akun yang sama, berguna untuk menghitung frekuensi transaksi.
+12. **Channel**: Saluran transaksi, seperti "Online", "ATM", atau "Branch" (kategorikal).
+13. **CustomerAge**: Usia pemegang akun, yang dikelompokkan secara logis berdasarkan pekerjaan.
+14. **CustomerOccupation**: Pekerjaan pemegang akun (misalnya, Dokter, Insinyur, Mahasiswa, Pensiunan), yang mencerminkan pola pendapatan (kategorikal).
+15. **TransactionDuration**: Durasi transaksi dalam hitungan detik, bervariasi berdasarkan jenis transaksi.
+16. **LoginAttempts**: Jumlah upaya login sebelum transaksi, dengan nilai tinggi yang bisa menunjukkan potensi anomali.
+
+Dataset ini sangat cocok untuk eksplorasi data keuangan dan deteksi kecurangan (*fraud detection*). Dengan kombinasi atribut transaksi, demografi pelanggan, dan pola penggunaan, dataset ini memberikan wawasan mendalam untuk pengembangan model *machine learning* yang berfokus pada keamanan keuangan dan deteksi anomali.
+
+# **2. Import Library**
+Pada tahap ini, Anda perlu mengimpor beberapa pustaka (library) Python yang dibutuhkan untuk analisis data dan pembangunan model machine learning.
+
+%pip install numpy pandas scipy matplotlib seaborn scikit-learn
+%pip install kagglehub[pandas-datasets]
+
+# Import library dasar untuk manipulasi dan analisis data
+import numpy as np
+import pandas as pd
+
+# Import library untuk visualisasi
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Import library untuk preprocessing
+from sklearn.preprocessing import RobustScaler, LabelEncoder, PowerTransformer, QuantileTransformer
+from scipy.stats.mstats import winsorize
+from scipy.stats import boxcox
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+# Import library untuk clustering
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, DBSCAN, FeatureAgglomeration
+from sklearn.metrics import silhouette_score
+
+# Import library untuk feature selection (opsional)
+from sklearn.feature_selection import VarianceThreshold
+
+# Library untuk berinteraksi dengan datasets dari kaggle
+import kagglehub
+
+# Library untuk melakukan operasi menggunakan sistem operasi
+import os
+import warnings
+
+# Mengatur tampilan visualisasi
+%matplotlib inline
+sns.set_style("whitegrid")
+
+# **3. Memuat Dataset**
+Pada tahap ini, Anda perlu memuat dataset ke dalam notebook. Jika dataset dalam format CSV, Anda bisa menggunakan pustaka pandas untuk membacanya. Pastikan untuk mengecek beberapa baris awal dataset untuk memahami strukturnya dan memastikan data telah dimuat dengan benar.
+
+Jika dataset berada di Google Drive, pastikan Anda menghubungkan Google Drive ke Colab terlebih dahulu. Setelah dataset berhasil dimuat, langkah berikutnya adalah memeriksa kesesuaian data dan siap untuk dianalisis lebih lanjut.
+
+# Download dataset
+path = kagglehub.dataset_download("valakhorasani/bank-transaction-dataset-for-fraud-detection")
+print("Path to dataset files:", path)
+
+# Memuat dataset
+csv_file = os.path.join(path, "bank_transactions_data_2.csv")
+
+# Muat ke DataFrame
+df = pd.read_csv(csv_file)
+
+# Simpan ke file CSV baru (opsional)
+output_path = "data/bank_transaction_dataset.csv"
+df.to_csv(output_path, index=False)
+print(f"Dataset disimpan ke: {output_path}")
+
+# Memuat dataset dari file CSV (diasumsikan sudah diunduh dari Kaggle)
+data = pd.read_csv('data/bank_transaction_dataset.csv')
+
+# Menampilkan 5 baris pertama dataset
+print("5 Baris Pertama Dataset:")
+print(data.head())
+
+# Menampilkan informasi dasar dataset
+print("\nInformasi Dataset:")
+print(data.info())
+
+# Memeriksa jumlah baris dan kolom
+print("\nJumlah Baris dan Kolom:", data.shape)
+
+# **4. Exploratory Data Analysis (EDA)**
+
+Pada tahap ini, Anda akan melakukan **Exploratory Data Analysis (EDA)** untuk memahami karakteristik dataset. EDA bertujuan untuk:
+
+1. **Memahami Struktur Data**
+   - Tinjau jumlah baris dan kolom dalam dataset.  
+   - Tinjau jenis data di setiap kolom (numerikal atau kategorikal).
+
+2. **Menangani Data yang Hilang**  
+   - Identifikasi dan analisis data yang hilang (*missing values*). Tentukan langkah-langkah yang diperlukan untuk menangani data yang hilang, seperti pengisian atau penghapusan data tersebut.
+
+3. **Analisis Distribusi dan Korelasi**  
+   - Analisis distribusi variabel numerik dengan statistik deskriptif dan visualisasi seperti histogram atau boxplot.  
+   - Periksa hubungan antara variabel menggunakan matriks korelasi atau scatter plot.
+
+4. **Visualisasi Data**  
+   - Buat visualisasi dasar seperti grafik distribusi dan diagram batang untuk variabel kategorikal.  
+   - Gunakan heatmap atau pairplot untuk menganalisis korelasi antar variabel.
+
+Tujuan dari EDA adalah untuk memperoleh wawasan awal yang mendalam mengenai data dan menentukan langkah selanjutnya dalam analisis atau pemodelan.
+
+# Asumsikan data sudah tersedia sebagai variabel 'data'
+
+# 1. Statistik Deskriptif
+print("Statistik Deskriptif untuk Kolom Numerikal:")
+print(data.describe())
+
+print("\nStatistik Deskriptif untuk Kolom Kategorikal:")
+print(data.describe(include=['object']))
+
+# 2. Pemeriksaan Missing Values
+print("\nJumlah Missing Values per Kolom:")
+print(data.isnull().sum())
+
+# 3. Visualisasi untuk Setiap Kolom (kecuali kolom yang berakhiran 'id')
+for col in data.columns:
+    # Lewati kolom dengan akhiran 'id' (case-insensitive)
+    if col.lower().endswith('id'):
+        continue
+
+    # Jika kolom merupakan tanggal (deteksi dari nama atau tipe data)
+    if ('date' in col.lower()) or pd.api.types.is_datetime64_any_dtype(data[col]):
+        # Pastikan kolom bertipe datetime; jika belum, konversi terlebih dahulu
+        if not pd.api.types.is_datetime64_any_dtype(data[col]):
+            data[col] = pd.to_datetime(data[col], errors='coerce')
+        
+        # Buat agregasi frekuensi per tanggal (misal: hitung jumlah baris per tanggal)
+        timeseries = data.groupby(col).size().reset_index(name='Count')
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(timeseries[col], timeseries['Count'], marker='o', linestyle='-')
+        plt.title(f'Time Series Plot untuk {col}')
+        plt.xlabel(col)
+        plt.ylabel('Count')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+    elif data[col].dtype in ['int64', 'float64']:
+        # Visualisasi untuk kolom numerikal
+        plt.figure(figsize=(10, 6))
+        sns.histplot(data[col], bins=50, kde=True, color='blue')
+        plt.title(f'Distribusi {col}')
+        plt.xlabel(col)
+        plt.ylabel('Frekuensi')
+        plt.show()
+        
+        plt.figure(figsize=(10, 2))
+        sns.boxplot(x=data[col], color='skyblue')
+        plt.title(f'Boxplot {col}')
+        plt.xlabel(col)
+        plt.show()
+    else:
+        # Visualisasi untuk kolom kategorikal
+        plt.figure(figsize=(10, 6))
+        sns.countplot(x=col, data=data, palette='viridis')
+        plt.title(f'Distribusi Kategori untuk {col}')
+        plt.xlabel(col)
+        plt.ylabel('Jumlah')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+
+# 4. Visualisasi Korelasi Antar Fitur Numerikal (jika ada lebih dari satu)
+numeric_cols = data.select_dtypes(include=np.number).columns
+if len(numeric_cols) > 1:
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(data[numeric_cols].corr(), annot=True, cmap='coolwarm', fmt=".2f")
+    plt.title('Matriks Korelasi Fitur Numerikal')
+    plt.show()
+
+# **5. Data Preprocessing**
+Pada tahap ini, data preprocessing adalah langkah penting untuk memastikan kualitas data sebelum digunakan dalam model machine learning. Data mentah sering kali mengandung nilai kosong, duplikasi, atau rentang nilai yang tidak konsisten, yang dapat memengaruhi kinerja model. Oleh karena itu, proses ini bertujuan untuk membersihkan dan mempersiapkan data agar analisis berjalan optimal.
+
+Berikut adalah tahapan-tahapan yang bisa dilakukan, tetapi **tidak terbatas** pada:
+1. Menghapus atau Menangani Data Kosong (Missing Values)
+2. Menghapus Data Duplikat
+3. Normalisasi atau Standarisasi Fitur
+4. Deteksi dan Penanganan Outlier
+5. Encoding Data Kategorikal
+6. Binning (Pengelompokan Data)
+
+Cukup sesuaikan dengan karakteristik data yang kamu gunakan yah.
+
+# Atur seed untuk konsistensi
+np.random.seed(42)
+
+# --- 1. PREPROCESSING AWAL ---
+
+# Penanganan Khusus untuk Kolom Date
+if 'TransactionDate' in data.columns and 'PreviousTransactionDate' in data.columns:
+    data['TransactionDate'] = pd.to_datetime(data['TransactionDate'], errors='coerce')
+    data['PreviousTransactionDate'] = pd.to_datetime(data['PreviousTransactionDate'], errors='coerce')
+    data['TransactionGap'] = (data['TransactionDate'] - data['PreviousTransactionDate']).dt.total_seconds()
+    data.drop(['TransactionDate', 'PreviousTransactionDate'], axis=1, inplace=True)
+
+date_cols = [col for col in data.columns if 'date' in col.lower()]
+for col in date_cols:
+    data[col] = pd.to_datetime(data[col], errors='coerce')
+    data[f'{col}_year'] = data[col].dt.year
+    data[f'{col}_month'] = data[col].dt.month
+    data[f'{col}_day'] = data[col].dt.day
+    data[f'{col}_hour'] = data[col].dt.hour
+    data[f'{col}_minute'] = data[col].dt.minute
+    data[f'{col}_second'] = data[col].dt.second
+    data.drop(col, axis=1, inplace=True)
+
+# Penanganan Khusus untuk Kolom IP Address
+if 'IP Address' in data.columns:
+    ip_split = data['IP Address'].str.split('.', expand=True)
+    ip_split.columns = ['IP1', 'IP2', 'IP3', 'IP4']
+    for col in ip_split.columns:
+        ip_split[col] = pd.to_numeric(ip_split[col], errors='coerce')
+    data.drop('IP Address', axis=1, inplace=True)
+    data = pd.concat([data, ip_split], axis=1)
+
+# Salin data untuk preprocessing awal
+data_original = data.copy()
+
+# Visualisasi Missing Values Sebelum Penanganan
+plt.figure(figsize=(10, 6))
+sns.heatmap(data_original.isnull(), cbar=False, cmap='viridis')
+plt.title('Missing Values Sebelum Penanganan')
+plt.show()
+
+print("Jumlah data kosong sebelum penanganan:")
+print(data_original.isnull().sum())
+
+# Tangani missing values
+for col in data_original.columns:
+    if data_original[col].dtype == 'object':
+        data_original[col] = data_original[col].fillna(data_original[col].mode()[0])
+    else:
+        data_original[col] = data_original[col].fillna(data_original[col].median())
+
+# Visualisasi Missing Values Sesudah Penanganan
+plt.figure(figsize=(10, 6))
+sns.heatmap(data_original.isnull(), cbar=False, cmap='viridis')
+plt.title('Missing Values Sesudah Penanganan')
+plt.show()
+
+print("\nJumlah data kosong setelah penanganan:")
+print(data_original.isnull().sum())
+
+# One-Hot Encoding untuk TransactionType
+if 'TransactionType' in data_original.columns:
+    data_before_ohe = data_original.copy()
+    data_original = pd.get_dummies(data_original, columns=['TransactionType'], drop_first=True)
+    print("\nKolom sebelum One-Hot Encoding:")
+    print(data_before_ohe.columns)
+    print("\nKolom setelah One-Hot Encoding:")
+    print(data_original.columns)
+
+# Label Encoding untuk kolom kategorikal
+cols_to_label = ['Location', 'CustomerOccupation', 'channel']
+label_encoders = {}
+categorical_cols = [col for col in data_original.select_dtypes(include=['object']).columns if col not in cols_to_label]
+for col in categorical_cols:
+    le = LabelEncoder()
+    data_original[col] = le.fit_transform(data_original[col])
+    label_encoders[col] = le
+
+# RobustScaler untuk kolom numerik
+numeric_cols = data_original.select_dtypes(include=['float64', 'int64']).columns
+data_pre_improve = data_original.copy()
+scaler = RobustScaler()
+data_pre_improve[numeric_cols] = scaler.fit_transform(data_pre_improve[numeric_cols])
+
+# Visualisasi Distribusi Awal
+for col in numeric_cols:
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    sns.histplot(data_original[col], bins=50, kde=True, ax=axes[0], color='blue')
+    axes[0].set_title(f'{col} - Original')
+    sns.histplot(data_pre_improve[col], bins=50, kde=True, ax=axes[1], color='orange')
+    axes[1].set_title(f'{col} - Setelah RobustScaler')
+    sns.boxplot(x=data_pre_improve[col], ax=axes[2], color='skyblue')
+    axes[2].set_title(f'Boxplot {col} - Setelah RobustScaler')
+    plt.tight_layout()
+    plt.show()
+
+print("\nContoh data pre-improve:")
+print(data_pre_improve.head())
+
+# --- 2. PERBAIKAN DISTRIBUSI & REDUKSI SKEWNESS ---
+
+data_improve = data_original.copy()
+data_before_skew = data_improve.copy()
+
+cols_keep_outliers = ['TransactionAmount', 'AccountBalance']
+
+def transform_series(series, threshold=0.5):
+    methods = [
+        (lambda s: PowerTransformer(method='yeo-johnson').fit_transform(s.values.reshape(-1,1)).flatten(), "Yeo-Johnson"),
+        (lambda s: np.log1p(s + abs(s.min()) + 1) if (s < 0).any() else np.log1p(s), "log1p"),
+        (lambda s: QuantileTransformer(output_distribution='normal', random_state=42, n_quantiles=min(100, len(s))).fit_transform(s.values.reshape(-1,1)).flatten(), "QuantileTransformer"),
+        (lambda s: boxcox(s + abs(s.min()) + 1)[0] if (s <= 0).any() else boxcox(s)[0], "Box-Cox")
+    ]
+    best_method, best_skew, best_transformed = None, np.inf, series.copy()
+    for func, name in methods:
+        try:
+            transformed = pd.Series(func(series), index=series.index)
+            current_skew = transformed.skew()
+            print(f"{name} menghasilkan skewness: {current_skew:.2f}")
+            if abs(current_skew) < threshold:
+                return transformed, name
+            if abs(current_skew) < abs(best_skew):
+                best_skew = current_skew
+                best_method = name
+                best_transformed = transformed
+        except Exception as e:
+            print(f"{name} gagal: {e}")
+    return best_transformed, best_method
+
+final_methods = {}
+for col in numeric_cols:
+    original_skew = data_before_skew[col].skew()
+    print(f"\nKolom: {col} (skewness asli: {original_skew:.2f})")
+    if col in cols_keep_outliers:
+        print(f"Kolom {col} dipertahankan distribusinya.")
+        continue
+    if abs(original_skew) > 0.5:
+        transformed_col, method_used = transform_series(data_before_skew[col])
+        trans_skew = transformed_col.skew()
+        if abs(trans_skew) <= 0.5:
+            data_improve[col] = transformed_col
+            final_methods[col] = method_used
+            print(f"Transformasi {method_used} berhasil, skewness: {trans_skew:.2f}")
+        else:
+            final_methods[col] = "Data Asli (Transformasi Gagal)"
+            print(f"Transformasi gagal, skewness: {trans_skew:.2f}")
+
+# Scaling ulang dengan StandardScaler
+scaler = StandardScaler()
+data_improve[numeric_cols] = scaler.fit_transform(data_improve[numeric_cols])
+
+# Visualisasi Perbandingan Sebelum & Sesudah Transformasi
+for col in numeric_cols:
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    sns.histplot(data_before_skew[col], bins=50, kde=True, ax=axes[0, 0], color='blue')
+    axes[0, 0].set_title(f'{col} - Sebelum Transformasi')
+    sns.histplot(data_improve[col], bins=50, kde=True, ax=axes[0, 1], color='green')
+    axes[0, 1].set_title(f'{col} - Sesudah Transformasi')
+    sns.boxplot(x=data_before_skew[col], ax=axes[1, 0], color='blue')
+    axes[1, 0].set_title(f'Boxplot {col} - Sebelum')
+    sns.boxplot(x=data_improve[col], ax=axes[1, 1], color='green')
+    axes[1, 1].set_title(f'Boxplot {col} - Sesudah')
+    plt.tight_layout()
+    plt.show()
+
+print("\nStatistik kolom numerikal setelah perbaikan:")
+print(data_improve[numeric_cols].describe())
+
+print("\nMetode transformasi yang digunakan:")
+for col, method in final_methods.items():
+    print(f"{col}: {method}")
+
+# --- 3. FITUR TURUNAN & LABEL ENCODING REVERSIBLE ---
+
+if 'TransactionAmount' in data_improve.columns and 'AccountBalance' in data_improve.columns:
+    epsilon = 1e-5
+    data_improve['Amount_to_Balance_Ratio'] = data_improve['TransactionAmount'] / (data_improve['AccountBalance'] + epsilon)
+    data_improve['Balance_after_Transaction'] = data_improve['AccountBalance'] - data_improve['TransactionAmount']
+
+    # Visualisasi Fitur Turunan
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    sns.histplot(data_improve['Amount_to_Balance_Ratio'], bins=50, kde=True, ax=axes[0], color='purple')
+    axes[0].set_title('Distribusi Amount_to_Balance_Ratio')
+    sns.histplot(data_improve['Balance_after_Transaction'], bins=50, kde=True, ax=axes[1], color='purple')
+    axes[1].set_title('Distribusi Balance_after_Transaction')
+    plt.tight_layout()
+    plt.show()
+
+label_encoders_custom = {}
+for col in cols_to_label:
+    if col in data_improve.columns:
+        le = LabelEncoder()
+        data_before_le = data_improve[col].copy()
+        data_improve[col] = le.fit_transform(data_improve[col])
+        label_encoders_custom[col] = le
+        print(f"\nContoh {col} sebelum dan sesudah Label Encoding:")
+        print(pd.DataFrame({'Sebelum': data_before_le[:5], 'Sesudah': data_improve[col][:5]}))
+
+print("\nContoh data akhir:")
+print(data_improve.head())
+
+# --- 5. VISUALISASI PAIRPLOT & MATRIX CORRELATION ---
+
+# Pairplot: Visualisasi hubungan antar fitur numerik (hanya contoh untuk subset fitur jika dataset besar)
+sns.pairplot(data_improve[numeric_cols])
+plt.suptitle('Pairplot Data Setelah Preprocessing & Feature Engineering', y=1.02)
+plt.show()
+
+# Matrix Correlation: Visualisasi korelasi antar fitur
+plt.figure(figsize=(12, 10))
+corr_matrix = data_improve.corr()
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Heatmap Korelasi Data Setelah Preprocessing & Feature Engineering')
+plt.show()
+
+print(data_improve.isna().sum())
+
+# **6. Pembangunan Model Clustering**
+## **a. Pembangunan Model Clustering**
+Pada tahap ini, Anda membangun model clustering dengan memilih algoritma yang sesuai untuk mengelompokkan data berdasarkan kesamaan. Berikut adalah **rekomendasi** tahapannya.
+1. Pilih algoritma clustering yang sesuai.
+2. Latih model dengan data menggunakan algoritma tersebut.
+
+# --- Segmen 1: Sebelum Feature Selection ---
+# Gunakan semua kolom numerik yang ada di data_improve (tanpa menghapus apa pun)
+data_before = data_improve.select_dtypes(include=['float64', 'int64']).copy()
+print("Kolom yang digunakan (Sebelum Feature Selection):")
+print(data_before.columns.tolist())
+
+# Evaluasi K-Means untuk k = 2 hingga 10
+candidate_ks = range(2, 11)
+sil_scores_before = []
+
+for k in candidate_ks:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    labels = kmeans.fit_predict(data_before)
+    score = silhouette_score(data_before, labels)
+    sil_scores_before.append(score)
+    print(f"[Sebelum] k = {k}, Silhouette Score = {score:.4f}")
+
+# Plot kurva Silhouette Score untuk data_before
+plt.figure(figsize=(8, 4))
+plt.plot(candidate_ks, sil_scores_before, marker='o', linestyle='-')
+plt.title("Silhouette Scores (Sebelum Feature Selection)")
+plt.xlabel("Number of Clusters (k)")
+plt.ylabel("Silhouette Score")
+plt.xticks(candidate_ks)
+plt.grid(True)
+plt.show()
+
+# Tentukan best k untuk data_before
+best_k_before = candidate_ks[np.argmax(sil_scores_before)]
+print("Best k (Sebelum Feature Selection):", best_k_before)
+
+# Lakukan clustering dengan best k
+kmeans_best_before = KMeans(n_clusters=best_k_before, random_state=42).fit(data_before)
+labels_best_before = kmeans_best_before.labels_
+
+## **b. Evaluasi Model Clustering**
+Untuk menentukan jumlah cluster yang optimal dalam model clustering, Anda dapat menggunakan metode Elbow atau Silhouette Score.
+
+Metode ini membantu kita menemukan jumlah cluster yang memberikan pemisahan terbaik antar kelompok data, sehingga model yang dibangun dapat lebih efektif. Berikut adalah **rekomendasi** tahapannya.
+1. Gunakan Silhouette Score dan Elbow Method untuk menentukan jumlah cluster optimal.
+2. Hitung Silhouette Score sebagai ukuran kualitas cluster.
+
+# Hitung jumlah data dalam setiap cluster sebelum feature selection
+cluster_counts_before = pd.Series(labels_best_before).value_counts().sort_index()
+print("\nJumlah data dalam setiap cluster (Sebelum Feature Selection):")
+print(cluster_counts_before)
+
+# Visualisasi clustering dengan PCA
+pca_before = PCA(n_components=2, random_state=42)
+pca_components_before = pca_before.fit_transform(data_before)
+pca_df_before = pd.DataFrame(pca_components_before, columns=['PC1', 'PC2'])
+pca_df_before['Cluster'] = labels_best_before.astype(str)
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=pca_df_before, x='PC1', y='PC2', hue='Cluster', palette='viridis', s=60)
+plt.title(f"K-Means Clustering (Sebelum Feature Selection), k = {best_k_before}")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.legend(title="Cluster")
+
+# Tambahkan anotasi jumlah data di setiap cluster
+for cluster, count in cluster_counts_before.items():
+    plt.annotate(f"{count}", 
+                 xy=(pca_df_before[pca_df_before['Cluster'] == cluster]['PC1'].median(),
+                     pca_df_before[pca_df_before['Cluster'] == cluster]['PC2'].median()),
+                 fontsize=12, color='black', weight='bold')
+
+plt.show()
+
+## **c. Feature Selection (Opsional)**
+Silakan lakukan feature selection jika Anda membutuhkan optimasi model clustering. Jika Anda menerapkan proses ini, silakan lakukan pemodelan dan evaluasi kembali menggunakan kolom-kolom hasil feature selection. Terakhir, bandingkan hasil performa model sebelum dan sesudah menerapkan feature selection.
+
+# Menampilkan semua kolom sebelum feature selection
+print("Kolom yang tersedia sebelum Feature Selection:")
+print(data_improve.columns.tolist())
+
+# --- Segmen 2: Setelah Feature Selection ---
+selected_features = ['TransactionAmount',          # Besarnya transaksi
+                     'TransactionGap',             # Selisih waktu antar transaksi
+                     'AccountBalance',             # Saldo akun sebelum transaksi
+                     'Balance_after_Transaction',  # Saldo setelah transaksi
+                     'TransactionDuration',        # Durasi transaksi
+                     'LoginAttempts',              # Jumlah upaya login
+                     'CustomerAge',               # Umur nasabah
+                     'IP1',
+                     'IP2',
+                     'IP3',
+                     'IP4',
+                     'Channel',
+                     'CustomerOccupation',
+                     'CustomerAge',
+                     'TransactionType_Debit',
+                     'Location',
+                     'DeviceID',
+                    ]
+
+data_after = data_improve[selected_features].copy()
+print("Kolom yang digunakan (Setelah Feature Selection):")
+print(data_after.columns.tolist())
+
+# Evaluasi K-Means untuk k = 2 hingga 10
+sil_scores_after = []
+
+for k in candidate_ks:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    labels = kmeans.fit_predict(data_after)
+    score = silhouette_score(data_after, labels)
+    sil_scores_after.append(score)
+    print(f"[Setelah] k = {k}, Silhouette Score = {score:.4f}")
+
+# Plot kurva Silhouette Score untuk data_after
+plt.figure(figsize=(8, 4))
+plt.plot(candidate_ks, sil_scores_after, marker='o', linestyle='-')
+plt.title("Silhouette Scores (Setelah Feature Selection)")
+plt.xlabel("Number of Clusters (k)")
+plt.ylabel("Silhouette Score")
+plt.xticks(candidate_ks)
+plt.grid(True)
+plt.show()
+
+# Tentukan best k untuk data_after
+best_k_after = candidate_ks[np.argmax(sil_scores_after)]
+print("Best k (Setelah Feature Selection):", best_k_after)
+
+# Lakukan clustering dengan best k
+kmeans_best_after = KMeans(n_clusters=best_k_after, random_state=42).fit(data_after)
+labels_best_after = kmeans_best_after.labels_
+
+# Hitung jumlah data dalam setiap cluster setelah feature selection
+cluster_counts_after = pd.Series(labels_best_after).value_counts().sort_index()
+print("\nJumlah data dalam setiap cluster (Setelah Feature Selection):")
+print(cluster_counts_after)
+
+# Visualisasi clustering dengan PCA
+pca_after = PCA(n_components=2, random_state=42)
+pca_components_after = pca_after.fit_transform(data_after)
+pca_df_after = pd.DataFrame(pca_components_after, columns=['PC1', 'PC2'])
+pca_df_after['Cluster'] = labels_best_after.astype(str)
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=pca_df_after, x='PC1', y='PC2', hue='Cluster', palette='viridis', s=60)
+plt.title(f"K-Means Clustering (Setelah Feature Selection), k = {best_k_after}")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.legend(title="Cluster")
+
+# Tambahkan anotasi jumlah data di setiap cluster
+for cluster, count in cluster_counts_after.items():
+    plt.annotate(f"{count}", 
+                 xy=(pca_df_after[pca_df_after['Cluster'] == cluster]['PC1'].median(),
+                     pca_df_after[pca_df_after['Cluster'] == cluster]['PC2'].median()),
+                 fontsize=12, color='black', weight='bold')
+
+plt.show()
+
+## **d. Visualisasi Hasil Clustering**
+Setelah model clustering dilatih dan jumlah cluster optimal ditentukan, langkah selanjutnya adalah menampilkan hasil clustering melalui visualisasi.
+
+Berikut adalah **rekomendasi** tahapannya.
+1. Tampilkan hasil clustering dalam bentuk visualisasi, seperti grafik scatter plot atau 2D PCA projection.
+
+# --- Visualisasi Hasil Clustering ---
+
+# Buat DataFrame dari hasil Feature Agglomeration (data_reduced)
+df_reduced = pd.DataFrame(data_fa, columns=[f'agg_feature_{i}' for i in range(data_fa.shape[1])])
+df_reduced['Cluster'] = final_labels
+
+# Cetak jumlah data per cluster
+print("Jumlah data per cluster:")
+print(df_reduced['Cluster'].value_counts())
+
+# Jika ingin mencetak jumlah cluster unik
+print("Jumlah cluster unik:", df_reduced['Cluster'].nunique())
+
+# Untuk visualisasi, kita lakukan PCA pada data_reduced (tanpa kolom 'Cluster') dengan n_components=2
+pca_vis = PCA(n_components=2)
+data_vis = pca_vis.fit_transform(df_reduced.drop('Cluster', axis=1))
+df_vis = pd.DataFrame(data_vis, columns=['PC1', 'PC2'])
+df_vis['Cluster'] = df_reduced['Cluster']
+
+# Visualisasikan hasil clustering dengan scatter plot
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='PC1', y='PC2', hue='Cluster', data=df_vis, palette='deep')
+plt.title('Visualisasi Hasil Clustering dengan PCA')
+plt.xlabel('Komponen Utama 1')
+plt.ylabel('Komponen Utama 2')
+plt.legend(title='Cluster')
+plt.show()
+
+## **e. Analisis dan Interpretasi Hasil Cluster**
+### Interpretasi Target
+**Tutorial: Melakukan Inverse Transform pada Data Target Setelah Clustering**
+
+Setelah melakukan clustering dengan model **KMeans**, kita perlu mengembalikan data yang telah diubah (normalisasi, standarisasi, atau label encoding) ke bentuk aslinya. Berikut adalah langkah-langkahnya.
+
+---
+
+**1. Tambahkan Hasil Label Cluster ke DataFrame**
+Setelah mendapatkan hasil clustering, kita tambahkan label cluster ke dalam DataFrame yang telah dinormalisasi.
+
+```python
+df_normalized['Cluster'] = model_kmeans.labels_
+```
+
+Lakukan Inverse Transform pada feature yang sudah dilakukan Labelisasi dan Standararisasi. Berikut code untuk melakukannya:
+label_encoder.inverse_transform(X_Selected[['Fitur']])
+
+Lalu masukkan ke dalam kolom dataset asli atau membuat dataframe baru
+```python
+df_normalized['Fitur'] = label_encoder.inverse_transform(df_normalized[['Fitur']])
+```
+Masukkan Data yang Sudah Di-Inverse ke dalam Dataset Asli atau Buat DataFrame Baru
+```python
+df_original['Fitur'] = df_normalized['Fitur']
+```
+
+### Inverse Data Jika Melakukan Normalisasi/Standardisasi
+Inverse Transform untuk Data yang Distandarisasi
+Jika data numerik telah dinormalisasi menggunakan StandardScaler atau MinMaxScaler, kita bisa mengembalikannya ke skala asli:
+```python
+df_normalized[['Fitur_Numerik']] = scaler.inverse_transform(df_normalized[['Fitur_Numerik']])
+```
+
+Setelah melakukan clustering, langkah selanjutnya adalah menganalisis karakteristik dari masing-masing cluster berdasarkan fitur yang tersedia.
+
+Berikut adalah **rekomendasi** tahapannya.
+1. Analisis karakteristik tiap cluster berdasarkan fitur yang tersedia (misalnya, distribusi nilai dalam cluster).
+2. Berikan interpretasi: Apakah hasil clustering sesuai dengan ekspektasi dan logika bisnis? Apakah ada pola tertentu yang bisa dimanfaatkan?
+
+Tulis hasil interpretasinya di sini.
+1. Cluster 1:
+2. Cluster 2:
+3. Cluster 3:
+
+# Contoh interpretasi [TEMPLATE]
+# Analisis Karakteristik Cluster dari Model KMeans
+
+Berikut adalah analisis karakteristik untuk setiap cluster yang dihasilkan dari model KMeans.
+
+## Cluster 1:
+- **Rata-rata Annual Income (k$):** 48,260  
+- **Rata-rata Spending Score (1-100):** 56.48  
+- **Analisis:** Cluster ini mencakup pelanggan dengan pendapatan tahunan menengah dan tingkat pengeluaran yang cukup tinggi. Pelanggan dalam cluster ini cenderung memiliki daya beli yang moderat dan mereka lebih cenderung untuk membelanjakan sebagian besar pendapatan mereka.
+
+## Cluster 2:
+- **Rata-rata Annual Income (k$):** 86,540  
+- **Rata-rata Spending Score (1-100):** 82.13  
+- **Analisis:** Cluster ini menunjukkan pelanggan dengan pendapatan tahunan tinggi dan pengeluaran yang sangat tinggi. Pelanggan di cluster ini merupakan kelompok premium dengan daya beli yang kuat dan cenderung mengeluarkan uang dalam jumlah besar untuk produk atau layanan.
+
+## Cluster 3:
+- **Rata-rata Annual Income (k$):** 87,000  
+- **Rata-rata Spending Score (1-100):** 18.63  
+- **Analisis:** Cluster ini terdiri dari pelanggan dengan pendapatan tahunan yang tinggi tetapi pengeluaran yang rendah. Mereka mungkin memiliki kapasitas finansial yang baik namun tidak terlalu aktif dalam berbelanja. Ini bisa menunjukkan bahwa mereka lebih selektif dalam pengeluaran mereka atau mungkin lebih cenderung untuk menyimpan uang.
+
+# **7. Mengeksport Data**
+
+Simpan hasilnya ke dalam file CSV.
+

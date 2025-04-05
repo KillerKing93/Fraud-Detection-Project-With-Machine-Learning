@@ -1,126 +1,136 @@
-# Dashboard Kualitas Udara Tionghoa
+# Proyek Machine Learning: Optimisasi Limit Kartu Kredit Berdasarkan Perilaku Transaksi
 
 ## Deskripsi
 
-Projek ini merupakan dashboard interaktif berbasis [Streamlit](https://streamlit.io/) untuk menganalisis data kualitas udara dari beberapa stasiun di Tionghoa. Fitur-fitur yang tersedia meliputi:
+Proyek ini merupakan implementasi machine learning untuk mengoptimalkan penetapan limit kartu kredit dengan menganalisis perilaku transaksi nasabah. Dengan memanfaatkan data transaksi bank, proyek ini bertujuan untuk mengelompokkan nasabah berdasarkan pola penggunaan kartu kredit dan perilaku keuangan mereka. Hasil segmentasi ini kemudian digunakan untuk menetapkan limit kartu kredit yang optimal, sehingga dapat meningkatkan kepuasan nasabah dan mengurangi risiko kredit macet.
 
-- **Peta Geospasial:** Menampilkan peta interaktif konsentrasi PM2.5 menggunakan [Folium](https://python-visualization.github.io/folium/).
-- **Visualisasi Data:** Menyediakan tab visualisasi untuk:
-  - **Statistik Stasiun:** Menampilkan statistik deskriptif, pie chart, heatmap korelasi, dan facet plot tren polutan.
-  - **Tren & Hubungan:** Menampilkan tren konsentrasi polutan (PM2.5, PM10) serta hubungan antara polutan dengan variabel meteorologi.
-  - **Perbandingan Antar Stasiun:** Memungkinkan perbandingan antar stasiun untuk berbagai variabel (PM, meteorologi, dan polutan lainnya).
-- **Filter Interaktif:** Pengguna dapat memfilter data berdasarkan stasiun dan rentang tanggal.
+## Tujuan Bisnis
 
-Selain dashboard interaktif, terdapat pula file **notebook.ipynb** yang menyediakan analisis data lebih mendalam menggunakan Jupyter Notebook.
+- **Meningkatkan Profitabilitas:** Menyesuaikan limit kartu kredit sesuai dengan profil penggunaan dan risiko masing-masing nasabah agar dapat meningkatkan pendapatan bunga dan mengurangi kredit bermasalah.
+- **Mengurangi Risiko Kredit Macet:** Dengan menentukan limit yang optimal, bank dapat meminimalkan risiko gagal bayar dan meningkatkan manajemen risiko.
+- **Meningkatkan Kepuasan Nasabah:** Penetapan limit yang tepat akan memberikan fleksibilitas bagi nasabah yang membutuhkan, sehingga meningkatkan loyalitas dan kepuasan.
+- **Personalisasi Penawaran Produk:** Hasil segmentasi dapat digunakan untuk merancang penawaran produk perbankan yang lebih sesuai dengan kebutuhan dan perilaku masing-masing segmen.
 
-Akses aplikasi di streamlit lewat link ini: [ProyekVisualisasiDataDicoding](https://killerking93-proyekvisualisasidatadicoding.streamlit.app/)
+## Pendekatan
+
+Proyek ini dibagi ke dalam dua tahap utama:
+
+1. **Clustering (Unsupervised Learning):**
+
+   - **Tujuan:** Mengelompokkan nasabah berdasarkan perilaku transaksi menggunakan algoritma clustering (misalnya, K-Means).
+   - **Fitur Utama:** Fitur yang digunakan dapat mencakup:
+     - Jumlah dan frekuensi transaksi
+     - Nilai transaksi rata-rata dan total
+     - Durasi transaksi dan interval antar transaksi
+     - Informasi demografis seperti usia nasabah (jika tersedia)
+     - Data tambahan (misalnya, informasi lokasi transaksi, perangkat yang digunakan, dll.)
+   - **Output:** Setiap nasabah akan mendapatkan label cluster yang menunjukkan kelompok perilaku transaksi serupa.
+
+2. **Optimisasi Limit Kartu Kredit:**
+   - **Tujuan:** Menetapkan limit kartu kredit yang optimal berdasarkan karakteristik dan risiko masing-masing cluster.
+   - **Pendekatan:**
+     - Melakukan analisis terhadap karakteristik masing-masing cluster untuk menentukan profil risiko.
+     - Menetapkan aturan atau menggunakan model supervised learning (misalnya, regresi atau decision tree) yang mengkalkulasi limit optimal berdasarkan pola historis.
+   - **Output:** Rekomendasi limit kartu kredit yang dapat diterapkan pada masing-masing segmen nasabah.
+
+Proyek ini terbagi dalam dua notebook Jupyter:
+
+- **Clustering Notebook:** Melakukan preprocessing data, segmentasi nasabah melalui clustering, dan analisis karakteristik tiap cluster.
+- **Optimization Notebook:** Menggunakan hasil segmentasi untuk membangun model atau aturan optimisasi limit, serta melakukan evaluasi performa sistem rekomendasi limit.
 
 ## Instalasi
 
-Pastikan Anda sudah menginstall Python (minimal versi 3.7) di sistem Anda.
+Pastikan Anda memiliki Python (minimal versi 3.7) terpasang di sistem Anda.
 
 ### 1. Membuat Virtual Environment
 
-Di direktori root proyek, buat virtual environment dengan perintah berikut:
+Di direktori root proyek, buat virtual environment dengan perintah:
 
 ```bash
-python3 -m venv venv
+python3 -m venv myvenv
+```
 
-       atau
+atau
 
-python -m venv venv
+```bash
+python -m venv myvenv
 ```
 
 ### 2. Mengaktifkan Virtual Environment
 
-Aktifkan virtual environment yang telah dibuat:
+Aktifkan virtual environment:
 
-- **Untuk Linux/MacOS:**
+- **Linux/MacOS:**
   ```bash
-  source venv/bin/activate
+  source myvenv/bin/activate
   ```
-- **Untuk Windows:**
+- **Windows:**
   ```bash
-  venv\Scripts\activate
+  myvenv\Scripts\activate
   ```
 
-> **Catatan:** Pastikan virtual environment aktif di direktori root proyek agar semua path relatif (seperti pemanggilan dataset dan gambar) berfungsi dengan baik.
+> **Catatan:** Pastikan virtual environment aktif di direktori root proyek agar path dataset dapat diakses dengan benar.
 
 ### 3. Instalasi Dependencies
 
-Setelah virtual environment aktif, instal semua dependencies yang diperlukan dengan menjalankan perintah:
+Setelah virtual environment aktif, instal dependensi dengan:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Pastikan file `requirements.txt` sudah terisi dengan paket-paket berikut (atau paket lain sesuai kebutuhan proyek):
+File `requirements.txt` harus mencakup:
 
-- streamlit
-- pandas
-- seaborn
-- matplotlib
 - numpy
-- scipy
-- folium
-- streamlit_folium
+- pandas
+- matplotlib
+- seaborn
+- scikit-learn
 - jupyter
 
-## Cara Menjalankan Projek
-
-### Menjalankan Dashboard Streamlit
-
-Untuk menjalankan dashboard interaktif, jalankan perintah berikut di direktori root:
-
-```bash
-streamlit run dashboard/dashboard.py
-```
-
-Dashboard akan terbuka secara otomatis di browser Anda.
+## Cara Menjalankan Proyek
 
 ### Menjalankan Jupyter Notebook
 
-Untuk melihat analisis data secara lebih mendalam, jalankan Jupyter Notebook dengan perintah:
+1. **Clustering Notebook**:
 
-```bash
-jupyter notebook notebook.ipynb
-```
+   - Jalankan perintah:
+     ```bash
+     jupyter notebook notebooks/[Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb
+     ```
+   - Buka file `[Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb` di antarmuka Jupyter Notebook untuk melakukan segmentasi nasabah.
 
-Kemudian, buka file `notebook.ipynb` melalui antarmuka web Jupyter Notebook yang terbuka.
+2. **Optimization Notebook**:
+   - Jalankan perintah:
+     ```bash
+     jupyter notebook notebooks/[Optimization]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb
+     ```
+   - Buka file `[Optimization]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb` di antarmuka Jupyter Notebook untuk melakukan optimisasi limit kartu kredit berdasarkan hasil clustering.
+
+**Urutan Eksekusi:**
+
+- Jalankan **Clustering Notebook** terlebih dahulu untuk menghasilkan label segmentasi nasabah.
+- Lanjutkan dengan **Optimization Notebook** untuk membangun model atau aturan optimisasi limit berdasarkan segmentasi tersebut.
 
 ## Struktur Folder Proyek
 
 ```
-├── dashboard/
-│   ├── dashboard.py           # Kode dashboard Streamlit
-│   └── PSRA_Data_SemuaStasiun.csv  # Gabungan dataset mentah yang telah dibersihkan dan digunakan pada dashboard
-├── data/                     # Dataset mentah
-│   ├── PRSA_Data_Aotizhongxin.csv
-│   ├── PRSA_Data_Changping.csv
-│   ├── PRSA_Data_Dingling.csv
-│   ├── PRSA_Data_Dongsi.csv
-│   ├── PRSA_Data_Guanyuan.csv
-│   ├── PRSA_Data_Gucheng.csv
-│   ├── PRSA_Data_Huairou.csv
-│   ├── PRSA_Data_Nongzhanguan.csv
-│   ├── PRSA_Data_Shunyi.csv
-│   ├── PRSA_Data_Tiantan.csv
-│   ├── PRSA_Data_Wanliu.csv
-│   └── PRSA_Data_Wanshouxigong.csv
-├── images/
-│   └── station.png            # Gambar yang digunakan di sidebar (diambil dari [Flaticon](https://www.flaticon.com/free-icon/station_1809492))
-├── notebook.ipynb             # Notebook Jupyter untuk analisis data
-├── LICENSE                    # Lisensi
-├── README.md                  # Dokumentasi proyek
-└── requirements.txt           # Daftar dependencies yang dibutuhkan
+├── data/
+│   ├── bank_transaction_dataset.csv   # Dataset mentah
+│   └── bank_transaction_segmented.csv # Dataset dengan label cluster
+├── notebooks/
+│   ├── [Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb   # Notebook untuk clustering/segmentasi
+│   └── [Optimization]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb           # Notebook untuk optimisasi limit
+├── LICENSE                            # Lisensi
+├── README.md                          # Dokumentasi proyek
+└── requirements.txt                   # Daftar dependensi
 ```
 
 ## Kontak
 
-Projek ini dibuat oleh **Alif Nurhidayat (KillerKing93)**  
+Dibuat oleh **Alif Nurhidayat (KillerKing93)**
 Email: [alifnurhidayatwork@gmail.com](mailto:alifnurhidayatwork@gmail.com)
 
 ## Lisensi
 
-Projek ini dilisensikan di bawah [Modified Apache License 2.0 – Non Commercial](LICENSE).  
-Lisensi ini mengadaptasi syarat-syarat dari Apache License 2.0 dengan penambahan pembatasan penggunaan untuk keperluan komersial. Penggunaan komersial dari software ini tidak diizinkan kecuali dengan memperoleh lisensi komersial secara terpisah dan membayar loyalty fee sesuai ketentuan. Silakan lihat file LICENSE untuk informasi lengkap.
+Proyek ini dilisensikan di bawah [Modified Apache License 2.0 – Non Commercial](LICENSE). Lisensi ini membatasi penggunaan komersial kecuali dengan izin tertulis dan pembayaran loyalty fee sesuai ketentuan. Lihat file LICENSE untuk detail lengkap.
