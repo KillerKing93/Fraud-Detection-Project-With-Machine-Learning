@@ -109,14 +109,14 @@ File `requirements.txt` harus mencakup:
 
    - Jalankan perintah:
      ```bash
-     jupyter notebook notebooks/[Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb
+     jupyter notebook [Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb
      ```
    - Buka file `[Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb` untuk melakukan segmentasi nasabah dan analisis profil risiko.
 
 2. **Klasifikasi Notebook:**
    - Jalankan perintah:
      ```bash
-     jupyter notebook notebooks/[Klasifikasi]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb
+     jupyter notebook [Klasifikasi]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb
      ```
    - Buka file `[Klasifikasi]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb` untuk mengembangkan model atau aturan optimisasi limit berdasarkan hasil segmentasi.
 
@@ -128,12 +128,10 @@ File `requirements.txt` harus mencakup:
 ## Struktur Folder Proyek
 
 ```
-├── data/
-│   ├── bank_transaction_dataset.csv   # Dataset mentah
-│   └── bank_transaction_segmented.csv # Dataset dengan label cluster
-├── notebooks/
-│   ├── [Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb   # Notebook untuk clustering/segmentasi
-│   └── [Klasifikasi]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb           # Notebook untuk optimisasi limit
+├── bank_transaction_dataset.csv   # Dataset mentah
+├── bank_transaction_segmented.csv # Dataset dengan label cluster
+├── [Clustering]_Submission_Akhir_BMLP_Alif_Nurhidayat_(Updated).ipynb   # Notebook untuk clustering/segmentasi
+├── [Klasifikasi]_Submission_Akhir_BMLP_Alif_Nurhidayat.ipynb           # Notebook untuk optimisasi limit
 ├── LICENSE                            # Lisensi
 ├── README.md                          # Dokumentasi proyek
 └── requirements.txt                   # Daftar dependensi
